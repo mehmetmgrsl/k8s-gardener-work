@@ -60,3 +60,9 @@ Every cloud is different. AWS, Azure, and GCP each have their own tools and rule
 3. **It doesn't scale**: Five clusters is fine. Fifty across three clouds is not. The platform team becomes the bottleneck.
 
 In the end, teams wait, the platform team drowns, and clusters quietly turn into a risk instead of a tool.
+
+### 3. What We Actually Need?
+
+If we want to fix the problem mentioed above, we need a way of managing clusters that does four things:
+
+![Needs](needs.png)
