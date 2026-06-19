@@ -2,6 +2,8 @@
 
 ### 1. The Scenario
 
+![Platform Bottleneck](platform-bottleneck.png)
+
 Let's assume we have a large software company, more than 5,000+ employees, multiple products, customers all over the world.
 
 This company has 50+ development teams. Each team owns different projects, different microservices, and has different needs:
@@ -44,4 +46,3 @@ Now, here's a conversation that happens every single day, multiple times a day, 
 
 
 This exact conversation plays out multiple times a day, every single day of the year. And it's not just about creating clusters, it's about keeping them healthy, updating them, scaling them, and making sure they don't break at 2 AM.
-
