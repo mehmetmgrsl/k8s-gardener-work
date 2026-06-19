@@ -98,6 +98,32 @@ So the four problems from before disappear:
 
 But to understand how Gardener pulls this off, we need to look at its architecture and that starts with three words: **Garden**, **Seed**, and **Shoot**.
 
+### 5. Gardener Architecture: Garden, Seed, and Shoot
+
+![Gardener Architecture](gardener02.png)
+
+
+- Gardener's design comes straight from its name. There are three kinds of clusters, and each plays a different role.
+
+  - **Garden** - the control center.
+
+      - This is the central cluster where Gardener itself runs. It's where you, the platform team, submit your Shoot manifests. The Garden cluster doesn't run anyone's workloads; it's the brain that knows about every cluster in the system and decides what needs to happen. Think of it as the place where you plant everything.
+
+  - **Seed** — where the control planes live.
+
+      - Here's Gardener's clever trick. Normally, every Kubernetes cluster needs its own control plane (API server, etcd, scheduler, etc.), usually running on dedicated master nodes. That's expensive and a pain to manage at scale. Instead, Gardener runs each cluster's control plane as pods inside a Seed cluster. So one Seed can host the control planes of many clusters at once — cheap, dense, and easy to operate. Seeds are the soil where clusters take root.
+
+  - **Shoot** — the cluster teams actually use.
+
+      - A Shoot is the end-user cluster — the one Team A runs their containers on. Its control plane lives as pods on a Seed, and its worker nodes run in the team's own cloud account (AWS, Azure, GCP...). To the team, it looks and behaves like a completely normal Kubernetes cluster. They never see the machinery underneath.
+
+- So the flow is:
+  - You apply a Shoot manifest to the Garden cluster
+  - Gardener places that cluster's control plane on a Seed
+  - the Shoot's worker nodes spin up in the target cloud
+  - Gardener keeps it all healthy, forever.
+
+This is why Gardener scales to thousands of clusters: control planes are just containers, managed like any other Kubernetes workload. No special master VMs, no snowflakes — Kubernetes managing Kubernetes, all the way down.
 
 ### References
 
