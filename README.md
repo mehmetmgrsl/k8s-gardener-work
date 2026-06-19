@@ -1,5 +1,11 @@
 ## Kubernetes Cluster Management at Scale with Gardener
 
+- [1. The Scenario](#1-the-scenario)
+  - [1.1 The Daily Conversation](#11-the-daily-conversation)
+- [2. The Problem](#2-the-problem)
+- [3. What We Actually Need?](#3-what-we-actually-need)
+- [4. Gardener - Kubernetes as a Service - Across Any Cloud](#4-gardener---kubernetes-as-a-service---across-any-cloud)
+
 ### 1. The Scenario
 
 ![Platform Bottleneck](platform-bottleneck.png)
