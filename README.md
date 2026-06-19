@@ -46,3 +46,17 @@ Now, here's a conversation that happens every single day, multiple times a day, 
 
 
 This exact conversation plays out multiple times a day, every single day of the year. And it's not just about creating clusters, it's about keeping them healthy, updating them, scaling them, and making sure they don't break at 2 AM.
+
+### 2. The Problem
+
+![Problem](problem.png)
+
+Every team just wants one thing: a place to run their containers. So they ask the platform team for a Kubernetes cluster. Simple, but here's where it gets hard.
+
+1. **Provisioning is the easy part**: Terraform or eksctl can spin up a cluster in minutes. That's day one. The real work is day two: upgrades, patches, backups, cert rotation, and 2 AM fixes, all of it stays with the platform team forever.
+
+2. **Consistency is hard**: Build 50 clusters over time and they slowly drift — different versions, different configs. Keeping a whole fleet identical and healthy is a constant fight.
+Every cloud is different. AWS, Azure, and GCP each have their own tools and rules. The platform team has to know them all.
+3. **It doesn't scale**: Five clusters is fine. Fifty across three clouds is not. The platform team becomes the bottleneck.
+
+In the end, teams wait, the platform team drowns, and clusters quietly turn into a risk instead of a tool.
