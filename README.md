@@ -5,6 +5,9 @@
 - [2. The Problem](#2-the-problem)
 - [3. What We Actually Need?](#3-what-we-actually-need)
 - [4. Gardener - Kubernetes as a Service - Across Any Cloud](#4-gardener---kubernetes-as-a-service---across-any-cloud)
+- [5. Gardener Architecture: Garden, Seed, and Shoot](#5-gardener-architecture-garden-seed-and-shoot)
+- [6. Hands-on: Running Gardener Locally](#6-hands-on-running-gardener-locally)
+
 
 ### 1. The Scenario
 
@@ -125,6 +128,113 @@ But to understand how Gardener pulls this off, we need to look at its architectu
 
 This is why Gardener scales to thousands of clusters: control planes are just containers, managed like any other Kubernetes workload. No special master VMs, no snowflakes — Kubernetes managing Kubernetes, all the way down.
 
+### 6. Hands-on: Running Gardener Locally
+
+- Let's run Gardener on a laptop. We'll use a single **KinD** cluster that plays both the Garden and the Seed role, then create our first Shoot on top of it.
+
+> **Why Linux?** Gardener's local setup is designed for Linux. On macOS it runs inside Docker Desktop's VM (gVisor networking + virtiofs), which adds networking and disk-I/O overhead that can stall worker-node provisioning. On a native Linux host these layers don't exist, so the setup is faster and far less error-prone. The steps below target **Ubuntu**.
+
+- **Prerequisites**: An Ubuntu machine (20.04 or newer) with at least 8 CPUs / 8Gi memory (more if you want several Shoots) and ~120Gi free disk. The official docs don't pin an Ubuntu version, but they do require **up-to-date tooling** — in particular a recent **Docker Engine**, **kubectl ≥ v1.30**, and the **latest Go**. On Ubuntu 20.04 the default `apt` packages are too old, so install these from their official sources (see 1.1). Follow the Local Setup guide up to the Get the sources step (2*).
+
+**1. Clone the repo and create the KinD cluster**
+
+
+**1.1. Install prerequisites (Ubuntu):** Unlike macOS, Ubuntu already ships the GNU coreutils and the `ip` command that Gardener's scripts expect — no extra GNU tools or `PATH` tweaks are needed. You only need recent versions of Docker, kubectl and Go. On Ubuntu 20.04 the packages in the default `apt` repos are too old, so install them from their official sources:
+
+```
+   # --- Docker Engine (from Docker's official repo, not the old apt docker.io) ---
+   sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null
+   sudo apt-get update
+   sudo apt-get install -y ca-certificates curl gnupg make git
+   sudo install -m 0755 -d /etc/apt/keyrings
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+   sudo chmod a+r /etc/apt/keyrings/docker.gpg
+   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   sudo apt-get update
+   sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+   sudo usermod -aG docker $USER && newgrp docker   # run docker without sudo
+
+   # --- kubectl (>= v1.30) ---
+   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+   # --- Go (latest) ---
+   # download the current release from https://go.dev/dl/ and add /usr/local/go/bin to PATH
+```
+
+Verify versions before continuing: `docker info`, `kubectl version --client` (should be ≥ v1.30), and `go version` should all succeed. `make kind-up` will also pull in `kind`, `helm`, `skaffold` and `yq` as described in the Local Setup guide referenced above.
+
+**1.2. Now clone and create the cluster:**
+```
+git clone https://github.com/gardener/gardener.git
+cd gardener
+make kind-up
+```
+
+**2. Deploy Gardener itself**
+
+```
+make gardener-up
+```
+
+- The first run takes a while.
+- It builds all the component images (via Skaffold) and deploys them through their Helm charts. 
+- When it's done, Gardener is running inside the cluster.
+
+**3. Wait for the Seed to become ready**
+
+```
+kubectl get seed local
+# wait until STATUS = Ready
+```
+
+```
+kubectl get seed local
+
+NAME    STATUS   LAST OPERATION               PROVIDER   REGION   AGE     VERSION        K8S VERSION
+local   Ready    Reconcile Succeeded (100%)   local      local    6m33s   v1.146.0-dev   v1.35.1
+```
+
+This is the Seed from [Section-5](#5-gardener-architecture-garden-seed-and-shoot) — the place where Shoot control planes will live.
+
+**4. Create your first Shoot**
+
+- Switch to the virtual garden cluster (where you submit Shoot manifests), then apply the example:
+
+```
+export KUBECONFIG=$PWD/dev-setup/kubeconfigs/virtual-garden/kubeconfig
+kubectl apply -f example/provider-local/shoot.yaml
+```
+
+- Watch it come to life:
+```
+kubectl -n garden-local get shoot local -w
+
+# LAST OPERATION climbs to 100%
+
+
+```
+
+- That's the whole point of Gardener in one command: you declared what you wanted, and it built the cluster — control plane on the Seed, workers provisioned automatically.
+
+**5. Access your Shoot**
+
+```
+./hack/usage/generate-kubeconfig.sh > admin-kubeconf.yaml
+kubectl --kubeconfig admin-kubeconf.yaml get nodes
+```
+
+- It behaves like any normal Kubernetes cluster — because that's exactly what it is.
+
+**6. Clean up**
+
+```
+./hack/usage/delete shoot local garden-local   # delete the Shoot
+make kind-down                                  # tear everything down
+```
+
 ### References
 
 1. https://gardener.cloud/
+
+2. https://gardener.cloud/docs/gardener/deployment/getting_started_locally/
